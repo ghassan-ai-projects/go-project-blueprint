@@ -1,0 +1,96 @@
+version: "2"
+
+# ---------------------------------------------------------------------------
+# golangci-lint v2 configuration
+# ---------------------------------------------------------------------------
+# Industry-best static analysis for Go. 14 linters enabled, opinionated
+# settings for gosec and wrapcheck. Matches the rules in AGENTS.md.
+# ---------------------------------------------------------------------------
+
+linters:
+  enable:
+    - errcheck      # unchecked errors
+    - govet         # standard go vet
+    - ineffassign   # ineffectual assignments
+    - staticcheck   # 100s of bugs
+    - unused        # unused vars/funcs/types
+    - gosec         # security issues
+    - misspell      # English spell-check
+    - noctx         # http.Request without ctx
+    - thelper       # test helpers missing t.Helper()
+    - musttag       # struct fields needing json/xml tags
+    - wrapcheck     # exported funcs must wrap errors
+    - errorlint     # error comparisons must use errors.Is/As
+    - nakedret      # naked returns in long funcs
+
+  disable:
+    - prealloc      # false positives, not worth the noise
+    - unconvert     # redundant with gofmt
+    - wastedassign  # covered by ineffassign
+    - paralleltest  # opinionated; team decides
+    - revive        # too noisy; staticcheck covers most
+
+  settings:
+    gosec:
+      # G101: hardcoded credentials (false positives in tests)
+      # G304: file path from variable (often legitimate)
+      excludes:
+        - G101
+        - G304
+
+    wrapcheck:
+      # Allow these signatures to return unwrapped errors
+      ignoreSigs:
+        - fmt.Errorf
+        - errors.New
+        - "*.Error() string"
+
+    nakedret:
+      # Naked returns in funcs over 30 lines
+      max-func-lines: 30
+
+    misspell:
+      locale: US
+
+    thelper:
+      test:
+        first: false  # don't require t.Helper() in first funcs
+        bench: false
+        tb: false
+        fuzz: false
+
+  exclusions:
+    # Generated files, vendored code, testdata (Go regex)
+    paths:
+      - (.*/)?mock(_.*)?\.go$
+      - (.*/)?mocks?/.*\.go$
+      - (.*/)?testdata/.*
+      - (.*/)?vendor/.*
+      - (.*/)?.*\.pb\.go$
+      - (.*/)?.*_gen\.go$
+      - (.*/)?.*_string\.go$
+
+# ---------------------------------------------------------------------------
+# Run configuration
+# ---------------------------------------------------------------------------
+
+run:
+  timeout: 5m
+  tests: true
+  modules-download-mode: readonly
+  allow-parallel-runners: true
+  allow-serial-runners: true
+
+issues:
+  max-issues-per-linter: 50
+  max-same-issues: 10
+  new-from-rev: HEAD~1  # only show new issues vs main
+  fix: false           # never auto-fix in CI
+
+output:
+  formats:
+    colored-line-number:
+      path: stdout
+  print-issued-lines: true
+  print-linter-name: true
+  uniq-by-line: true
