@@ -31,13 +31,14 @@ Setup checklist (do these once, right after `git clone`):
 
 1. Update `module` in `go.mod` to your module path (e.g. `github.com/your-org/your-project`).
 2. Update `BINARY` in the `Makefile` to your binary name (e.g. `BINARY := bin/myapp`).
-3. Update the `-local` flag in `.pre-commit-config.yaml` to your module path.
-4. Replace the placeholder module path in `.golangci.yml` exclusions (if any) and `run` config.
-5. Update the **Project Identity** section below with 1–2 paragraphs about your project.
-6. Add your entry point at `cmd/<binary>/main.go`.
-7. Update copyright in `LICENSE` if not the template author.
-8. Install the pre-commit hook: `pre-commit install`.
-9. Run `make ci-check` once to confirm everything is green.
+3. Update `MODULE` in the `Makefile` to your module path (same as `go.mod`).
+4. Update the `-local` flag in `.pre-commit-config.yaml` to your module path.
+5. Replace the placeholder module path in `.golangci.yml` exclusions (if any) and `run` config.
+6. Update the **Project Identity** section below with 1–2 paragraphs about your project.
+7. Add your entry point at `cmd/<binary>/main.go`.
+8. Update copyright in `LICENSE` if not the template author.
+9. Install the pre-commit hook: `pre-commit install`.
+10. Run `make ci-check` once to confirm everything is green.
 
 ---
 
@@ -62,8 +63,8 @@ Strict. Non-negotiable for new code. Reviewers will flag violations.
 
 | Element | Convention | Example |
 |---|---|---|
-| Files | `snake_case.go` | `agent_store.go` |
-| Test files | `<file>_test.go` | `agent_store_test.go` |
+| Files | `lowercase.go` | `agentstore.go` |
+| Test files | `<file>_test.go` | `agentstore_test.go` |
 | Types (exported) | `PascalCase` | `AgentStore` |
 | Types (unexported) | `camelCase` | `agentCache` |
 | Interfaces | `-er` suffix or descriptive noun | `Reader`, `AgentStore` |
@@ -125,7 +126,7 @@ The default Go project layout. Adopt it unless you have a strong reason not to.
 
 ## Quality Gates
 
-All gates must pass before any code is merged. The full pipeline `make ci-check` runs `tidy → build → vet → lint → test`. **This is what CI runs and what you run locally before committing.**
+All gates must pass before any code is merged. The full pipeline `make ci-check` runs `tidy → build → vet → lint → test → deadcode → vulncheck`. **This matches what CI runs.**
 
 | Gate | Command | Required |
 |---|---|---|
@@ -135,10 +136,10 @@ All gates must pass before any code is merged. The full pipeline `make ci-check`
 | Lint | `make lint` (golangci-lint, 14 linters) | clean |
 | Build | `make build` | success |
 | Test | `make test` (race + shuffle + count=1) | passes |
-| Coverage | `make test-coverage` | meets layer targets |
+| Coverage | `make test-coverage` | meets layer targets (review-enforced) |
 | Deadcode | `make deadcode` | no unused funcs |
 | Vulns | `make vulncheck` | no known vulns |
-| CI | `make ci-check` | green |
+| CI | `make ci-check` | green (tidy + build + vet + lint + test + deadcode + vulncheck) |
 
 ---
 
@@ -220,7 +221,7 @@ Strict. Reviewers will flag violations.
 
 ### DO NOT
 
-- Use `database/sql` — use a native driver (`pgx`, `modernc.org/sqlite`, etc.).
+- Use the `database/sql` interface — use a native driver directly (`pgx`, `modernc.org/sqlite`, etc.).
 - Use `init()` outside the `config/` package.
 - Use `context.Background()` in business logic — only in `main.go` and tests (use `t.Context()` in tests).
 - Use `fmt.Println` for logging — use `slog`.
@@ -249,6 +250,8 @@ Strict. Reviewers will flag violations.
 ### Common Commands
 
 ```bash
+make help             # show all available targets
+make fmt              # format code with goimports
 make tidy             # go mod tidy
 make build            # go build ./...
 make run              # go run ./cmd/<binary>/
@@ -258,7 +261,7 @@ make test-coverage    # test with coverage report
 make test-race        # test with race detector
 make lint             # golangci-lint run
 make lint-ci          # golangci-lint with --timeout=5m
-make ci-check         # tidy + build + vet + lint + test (what CI runs)
+make ci-check         # tidy + build + vet + lint + test + deadcode + vulncheck (matches CI)
 make deadcode         # detect unused exported functions
 make vulncheck        # govulncheck
 make clean            # rm coverage.out, rm -rf bin/
@@ -284,10 +287,13 @@ pre-commit install
 | `end-of-file-fixer` | Ensures files end with a newline |
 | `check-yaml` | Validates YAML syntax |
 | `check-merge-conflict` | Blocks commits with conflict markers |
+| `check-added-large-files` | Rejects files over 1 MB |
+| `check-case-conflict` | Blocks case-insensitive filename collisions |
+| `mixed-line-ending` | Ensures LF line endings |
 | `go-fmt` | Runs `gofmt` |
 | `go-vet` | Runs `go vet` |
 | `go-imports` | Runs `goimports -local <module-path>` |
-| `golangci-lint --fast` | Runs the linter (fast mode, no type-checking) |
+| `golangci-lint` | Runs the linter (golangci-lint, timeout 1m) |
 
 If any of these fail, the commit is **blocked**. Fix the issues and re-commit.
 

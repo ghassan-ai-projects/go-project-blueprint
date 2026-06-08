@@ -7,6 +7,7 @@
 
 # ---- Configurable ---------------------------------------------------------
 BINARY    ?= bin/$(shell basename $(CURDIR))
+MODULE    ?= github.com/your-org/your-project
 VERSION   := $(shell git describe --tags 2>/dev/null || echo dev)
 COMMIT    := $(shell git rev-parse --short HEAD 2>/dev/null || echo none)
 LDFLAGS   := -ldflags="-X main.Version=$(VERSION) -X main.Commit=$(COMMIT)"
@@ -36,7 +37,7 @@ build: ## Compile all packages
 	@if [ -d cmd ]; then \
 	  go build $(LDFLAGS) -o $(BINARY) ./cmd/...; \
 	else \
-	  echo "(no cmd/ directory yet — add cmd/<name>/main.go to enable build)"; \
+	  echo "(no cmd/ directory yet -- add cmd/<name>/main.go to enable build)"; \
 	fi
 
 cross-compile: ## Cross-compile linux/amd64 binary
@@ -46,7 +47,7 @@ cross-compile: ## Cross-compile linux/amd64 binary
 	    -o bin/$(shell basename $(BINARY))-linux-amd64 ./cmd/...; \
 	  echo "Linux binary: bin/$(shell basename $(BINARY))-linux-amd64 ($$(ls -lh bin/$(shell basename $(BINARY))-linux-amd64 | awk '{print $$5}'))"; \
 	else \
-	  echo "(no cmd/ directory yet — nothing to cross-compile)"; \
+	  echo "(no cmd/ directory yet -- nothing to cross-compile)"; \
 	fi
 
 run: ## Run the binary (requires cmd/<name>/main.go)
@@ -65,12 +66,12 @@ vet: ## Run go vet
 	@if [ "$(HAS_PKGS)" = "yes" ]; then \
 	  go vet $(PKGS); \
 	else \
-	  echo "(no packages yet — skipping vet)"; \
+	  echo "(no packages yet -- skipping vet)"; \
 	fi
 
 fmt: ## Format code with goimports
 	@if command -v goimports >/dev/null 2>&1; then \
-	  goimports -w -local github.com/your-org/your-project .; \
+	  goimports -w -local $(MODULE) .; \
 	else \
 	  gofmt -w .; \
 	  echo "(install goimports for import-grouping: go install golang.org/x/tools/cmd/goimports@latest)"; \
@@ -79,7 +80,7 @@ fmt: ## Format code with goimports
 tidy: ## Run go mod tidy
 	go mod tidy
 
-lint: ## Run golangci-lint (fast)
+lint: ## Run golangci-lint
 	golangci-lint run --timeout=3m
 
 lint-ci: ## Run golangci-lint with full timeout (for CI)
@@ -89,23 +90,23 @@ lint-ci: ## Run golangci-lint with full timeout (for CI)
 test: ## Run all tests with race + shuffle + coverage
 	@if [ "$(HAS_PKGS)" = "yes" ]; then \
 	  go test -race -count=1 -shuffle=on -coverprofile=coverage.out $(PKGS) && \
-	  go tool cover -func=coverage.out | grep total; \
+	  (go tool cover -func=coverage.out 2>/dev/null | grep total || true); \
 	else \
-	  echo "(no packages yet — skipping test)"; \
+	  echo "(no packages yet -- skipping test)"; \
 	fi
 
 test-short: ## Run tests in short mode (skip integration)
 	@if [ "$(HAS_PKGS)" = "yes" ]; then \
 	  go test -short -race -count=1 -shuffle=on $(PKGS); \
 	else \
-	  echo "(no packages yet — skipping test)"; \
+	  echo "(no packages yet -- skipping test)"; \
 	fi
 
 test-race: ## Run tests with race detector
 	@if [ "$(HAS_PKGS)" = "yes" ]; then \
 	  go test -race -count=1 $(PKGS); \
 	else \
-	  echo "(no packages yet — skipping test)"; \
+	  echo "(no packages yet -- skipping test)"; \
 	fi
 
 test-coverage: ## Run tests and produce HTML coverage report
@@ -114,19 +115,19 @@ test-coverage: ## Run tests and produce HTML coverage report
 	  go tool cover -html=coverage.out -o coverage.html && \
 	  echo "Coverage: coverage.html"; \
 	else \
-	  echo "(no packages yet — skipping coverage)"; \
+	  echo "(no packages yet -- skipping coverage)"; \
 	fi
 
 # ---- Pipeline -------------------------------------------------------------
-ci-check: tidy build vet lint-ci test-short ## Run the full CI pipeline locally
-	@echo "✅ CI check passed"
+ci-check: tidy build vet lint-ci test-short deadcode vulncheck ## Run the full CI pipeline locally (matches .github/workflows/ci.yml)
+	@echo "  CI check passed"
 
 # ---- Tools ----------------------------------------------------------------
 deadcode: ## Detect unused exported functions
-	@if [ "$(HAS_PKGS)" = "yes" ] && [ -n "$$(find . -name 'main.go' -not -path './tools/*' 2>/dev/null | head -1)" ]; then \
+	@if command -v deadcode >/dev/null 2>&1 && [ "$(HAS_PKGS)" = "yes" ]; then \
 	  deadcode -test ./...; \
 	else \
-	  echo "(no main packages yet — skipping deadcode)"; \
+	  echo "(deadcode not available or no packages -- skipping)"; \
 	fi
 
 vulncheck: ## Run govulncheck
@@ -134,10 +135,10 @@ vulncheck: ## Run govulncheck
 	  if [ "$(HAS_PKGS)" = "yes" ]; then \
 	    govulncheck ./...; \
 	  else \
-	    echo "(no packages yet — skipping vulncheck)"; \
+	    echo "(no packages yet -- skipping vulncheck)"; \
 	  fi; \
 	else \
-	  echo "(govulncheck not installed — run: go install golang.org/x/vuln/cmd/govulncheck@latest)"; \
+	  echo "(govulncheck not installed -- run: go install golang.org/x/vuln/cmd/govulncheck@latest)"; \
 	fi
 
 # ---- Cleanup --------------------------------------------------------------

@@ -1,6 +1,6 @@
 module github.com/your-org/your-project
 
-go 1.26.4
+go 1.25.0
 
 require (
 	golang.org/x/tools v0.45.0

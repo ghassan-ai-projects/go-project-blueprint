@@ -9,19 +9,20 @@ version: "2"
 
 linters:
   enable:
-    - errcheck      # unchecked errors
-    - govet         # standard go vet
-    - ineffassign   # ineffectual assignments
-    - staticcheck   # 100s of bugs
-    - unused        # unused vars/funcs/types
-    - gosec         # security issues
-    - misspell      # English spell-check
-    - noctx         # http.Request without ctx
-    - thelper       # test helpers missing t.Helper()
-    - musttag       # struct fields needing json/xml tags
-    - wrapcheck     # exported funcs must wrap errors
-    - errorlint     # error comparisons must use errors.Is/As
-    - nakedret      # naked returns in long funcs
+    - errcheck       # unchecked errors
+    - govet          # standard go vet
+    - ineffassign    # ineffectual assignments
+    - staticcheck    # 100s of bugs
+    - unused         # unused vars/funcs/types
+    - gosec          # security issues
+    - misspell       # English spell-check
+    - noctx          # http.Request without ctx
+    - thelper        # test helpers missing t.Helper()
+    - musttag        # struct fields needing json/xml tags
+    - wrapcheck      # exported funcs must wrap errors
+    - errorlint      # error comparisons must use errors.Is/As
+    - nakedret       # naked returns in long funcs
+    - durationcheck  # time.Duration arithmetic bugs (e.g. multiplying two Durations)
 
   disable:
     - prealloc      # false positives, not worth the noise
@@ -59,16 +60,16 @@ linters:
         tb: false
         fuzz: false
 
-  exclusions:
-    # Generated files, vendored code, testdata (Go regex)
-    paths:
-      - (.*/)?mock(_.*)?\.go$
-      - (.*/)?mocks?/.*\.go$
-      - (.*/)?testdata/.*
-      - (.*/)?vendor/.*
-      - (.*/)?.*\.pb\.go$
-      - (.*/)?.*_gen\.go$
-      - (.*/)?.*_string\.go$
+    exclusions:
+      # Generated files, vendored code, testdata (Go regex)
+      paths:
+        - (.*/)?mock(_.*)?\.go$
+        - (.*/)?mocks?/.*\.go$
+        - (.*/)?testdata/.*
+        - (.*/)?vendor/.*
+        - (.*/)?.*\.pb\.go$
+        - (.*/)?.*_gen\.go$
+        - (.*/)?.*_string\.go$
 
 # ---------------------------------------------------------------------------
 # Run configuration
