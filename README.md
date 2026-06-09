@@ -1,30 +1,37 @@
 # Go Project Blueprint
 
-> **The starter kit every Go coding agent wishes you had.**
+Production-ready scaffolding for Go projects that expect humans and coding agents to work in the same repository.
 
-Industry-best agent configuration files for Go projects — `AGENTS.md`, linters, CI, pre-commit hooks, `Makefile`s — the **ultimate coding-agent onboarding kit**.
+This template gives agents a crisp operating contract, gives humans reproducible quality gates, and keeps the two aligned through `AGENTS.md`, linting, pre-commit hooks, CI, and a small set of agent bridge files.
 
 ---
 
-## What
+## What's Included
 
-This repository is a **template** — the configuration files (not the application code) that any Go project can adopt to give coding agents (Claude, Cursor, Qwen, Aider, etc.) the best possible context to work effectively.
+This repository is a **template**, not an application. Fork it, replace the project identity, add your Go code, and keep the quality gates intact.
 
 It includes:
 
-- **`AGENTS.md`** — the canonical reference for any coding agent, covering naming, structure, quality gates, the test mandate, and coding rules.
-- **`.golangci.yml`** — 14 linters, opinionated settings for `gosec` and `wrapcheck`.
-- **`.pre-commit-config.yaml`** — automated quality gates on every commit.
-- **`Makefile`** — `tidy`, `build`, `vet`, `lint`, `test`, `test-coverage`, `ci-check`, `deadcode`, `vulncheck`, `cross-compile`.
-- **`.github/workflows/ci.yml`** — full CI pipeline: tidy → build → vet → lint → test → deadcode → vulncheck → cross-compile.
-- **`tools.go`** — pins `deadcode` and `govulncheck` in `go.mod` for reproducible installs.
-- **`.editorconfig`**, **`.gitignore`**, **`LICENSE`**.
+- `AGENTS.md` — the canonical instructions for agents and humans; Codex reads this natively.
+- `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md` — thin bridge files that point popular agents at the canonical instructions.
+- `CONTRIBUTING.md`, `SECURITY.md`, PR and issue templates — human governance for reviews, reports, and contribution flow.
+- `.golangci.yml` — strict Go linting with security and error-handling checks.
+- `.pre-commit-config.yaml` — local hooks for formatting, vetting, imports, linting, and file hygiene.
+- `.github/workflows/ci.yml`, `.github/dependabot.yml` — GitHub Actions pipeline and dependency update automation.
+- `Makefile` — reproducible local commands for daily development and CI parity.
+- `tools.go` — pinned tool dependencies for reproducible installs.
+- `.editorconfig`, `.gitignore`, `LICENSE`.
 
 ## Why
 
-Most Go projects hand coding agents a wall of ambiguity: where do files go? What naming? Is there a test mandate? What about logging? CI? The agent guesses, the human reviews, the cycle repeats. **This blueprint removes the guessing.**
+Most repositories hand coding agents a wall of ambiguity: where do files go, which command is authoritative, what needs tests, which architecture boundaries matter, and what may be changed without review? The result is predictable: the agent guesses, the human corrects, and the same mistakes recur.
 
-`AGENTS.md` is the single source of truth. The pre-commit hook enforces the rules before push. CI enforces them again. **The agent, the human, and CI all read the same document.**
+This blueprint makes the contract explicit:
+
+- Agents read one canonical instruction file before editing.
+- Humans get a short setup checklist and reproducible commands.
+- Hooks and CI enforce what prose alone cannot.
+- Tool-specific files stay tiny and delegate to `AGENTS.md`, avoiding drift. Codex needs no bridge file because `AGENTS.md` is its native project-guidance format.
 
 ## Who
 
@@ -32,7 +39,7 @@ Fork this if you:
 
 - Start a new Go project and want production-grade scaffolding from minute one.
 - Maintain an existing Go project and want to give every coding agent a level playing field.
-- Run a team of humans + agents and want a single convention document that governs both.
+- Run a team of humans plus agents and want one convention document that governs both.
 
 ## How
 
@@ -46,37 +53,42 @@ cd your-project
 # 2. Update the module path
 go mod edit -module github.com/your-org/your-project
 
-# 3. Install the pre-commit hook
+# 3. Update AGENTS.md Project Identity and Makefile MODULE/BINARY
+$EDITOR AGENTS.md Makefile .pre-commit-config.yaml
+
+# 4. Install the pre-commit hook
 pre-commit install
 
-# 4. Verify the toolchain
+# 5. Verify the toolchain
 make ci-check
 
-# 5. Add your entry point
+# 6. Add your entry point
 mkdir -p cmd/myapp
 echo 'package main
 
 func main() {}' > cmd/myapp/main.go
 
-# 6. Build
+# 7. Build
 make build
 ```
 
 For the full setup checklist, see [**`AGENTS.md` → For Humans Forking This Template**](AGENTS.md#for-humans-forking-this-template).
 
-### Coding agents
+### For Coding Agents
 
-Read [**`AGENTS.md`**](AGENTS.md) end-to-end before you write a single line of code. Every section is load-bearing.
+Read [AGENTS.md](AGENTS.md) before editing. It contains the project identity, architecture boundaries, test mandate, quality gates, and handoff expectations.
 
 ## Quality
 
 ```bash
-make ci-check     # tidy + build + vet + lint + test (what CI runs)
-make test         # go test -race -count=1 -shuffle=on
-make lint         # golangci-lint (14 linters)
-make deadcode     # detect unused functions
-make vulncheck    # govulncheck
+make ci-check        # tidy + build + vet + lint + test-short + deadcode + vulncheck
+make test            # race + shuffle + coverage
+make test-coverage   # coverage HTML report
+make lint            # golangci-lint
+make cross-compile   # linux/amd64 binary
 ```
+
+CI runs the same core quality gates and also publishes a short-lived linux/amd64 artifact.
 
 ## License
 

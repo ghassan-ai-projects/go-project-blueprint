@@ -1,33 +1,64 @@
-# AGENTS.md — Go Project Blueprint
+# AGENTS.md - Go Project Blueprint
 
-> **The canonical reference for every coding agent (Claude, Cursor, Qwen, …) working in a Go project that adopted this blueprint.**
-> Read this file end-to-end before you write a single line of code. Every section is load-bearing.
+This is the canonical operating guide for coding agents working in this repository. Keep it specific, enforceable, and short enough to stay useful in every session.
 
 ---
 
 ## What This Is
 
-This repository is a **template** — the agent configuration files (`AGENTS.md`, linters, CI, pre-commit hooks, `Makefile`) that any Go project can adopt to give coding agents the best possible context. **Fork it, customize it, ship it.** The included files are not the application — they are the scaffold the application grows inside.
+This repository is a **template**: agent instructions, lint rules, CI, pre-commit hooks, and Make targets that Go projects can adopt. The included files are scaffold, not the application.
 
 ---
 
 ## For Coding Agents
 
-You are a coding agent working in a Go project that adopted this blueprint. Before you start:
+Before editing:
 
-1. **Read this entire file.** Every section is load-bearing.
-2. **Run `make ci-check`** to confirm the toolchain is healthy.
-3. **Read [`README.md`](README.md)** for project-specific context, domain, and stack.
-4. **Read the "Project Identity" section below** for the *specific* project you're in.
-5. **Follow the Test Mandate.** Tests are not optional.
+1. Read this file and the "Project Identity" section.
+2. Read [README.md](README.md) for repository-specific context.
+3. Check the worktree with `git status --short`; never overwrite user changes.
+4. Run `make ci-check` before changes when feasible. If it fails because dependencies or tools are missing, report that and continue with the narrowest useful checks.
+5. Follow the Test Mandate for every production-code change.
 
-If a human reviewer's feedback conflicts with this file, **defer to the human** — but propose a change to this file so the rule becomes explicit.
+During work:
+
+- Prefer small, reviewable changes over broad rewrites.
+- Use existing package boundaries and local helpers before adding new abstractions.
+- Explain any new dependency, generated artifact, skipped test, or changed public behavior in the handoff.
+- If human feedback conflicts with this file, follow the human and propose a doc update.
+
+Default workflow:
+
+1. Think: restate the goal, constraints, relevant files, and risks.
+2. Plan: outline the smallest safe change and the checks that will prove it works.
+3. Review plan: pause for human review when the change is broad, ambiguous, security-sensitive, destructive, architectural, or dependency-changing. For small obvious fixes, proceed and summarize the plan in the handoff.
+4. Write tests: add or update failing tests first for production-code behavior changes.
+5. Implement: make the smallest cohesive change that satisfies the plan.
+6. Validate: prove the change meets the Definition of Done below.
+7. Handoff: summarize changed files, behavior, checks, skipped checks, and residual risk.
+
+Definition of Done:
+
+- Scope is satisfied: the requested behavior or documentation change is complete, with no unrelated refactors.
+- Tests are meaningful: production-code changes include tests for the new or changed behavior, and modified packages do not show 0% coverage.
+- Quality gates pass: run `make ci-check` unless the change is documentation-only and a narrower check is clearly sufficient.
+- Formatting and hygiene pass: run `git diff --check`; run `pre-commit run --all-files` when `pre-commit` is installed.
+- Documentation is current: update `README.md`, `AGENTS.md`, config examples, or reference docs when behavior, commands, setup, or agent expectations change.
+- Security is considered: no secrets are added, new inputs are validated, dependency or workflow permission changes are called out, and security-sensitive changes receive plan review.
+- Automation matches prose: Makefile targets, CI, hooks, and documented commands agree.
+- Handoff is complete: final response or PR notes list changed files, validation performed, skipped checks with reasons, and residual risks.
+
+Handoff checklist:
+
+- State what changed and why.
+- List tests/checks run, including failures and skipped checks.
+- Call out migrations, configuration changes, security considerations, and follow-up work.
 
 ---
 
 ## For Humans Forking This Template
 
-Setup checklist (do these once, right after `git clone`):
+Setup checklist after cloning or using this template:
 
 1. Update `module` in `go.mod` to your module path (e.g. `github.com/your-org/your-project`).
 2. Update `BINARY` in the `Makefile` to your binary name (e.g. `BINARY := bin/myapp`).
@@ -38,7 +69,24 @@ Setup checklist (do these once, right after `git clone`):
 7. Add your entry point at `cmd/<binary>/main.go`.
 8. Update copyright in `LICENSE` if not the template author.
 9. Install the pre-commit hook: `pre-commit install`.
-10. Run `make ci-check` once to confirm everything is green.
+10. Update `CLAUDE.md`, `GEMINI.md`, and `.github/copilot-instructions.md` only if your team needs tool-specific behavior beyond importing `AGENTS.md`.
+11. Run `make ci-check` once to confirm everything is green.
+
+Keep `AGENTS.md` canonical. Tool-specific files should bridge to it instead of duplicating rules.
+
+---
+
+## Agent Configuration Strategy
+
+- `AGENTS.md` is the cross-agent source of truth.
+- Codex reads `AGENTS.md` natively. Do not add a `CODEX.md` duplicate.
+- `CLAUDE.md` imports `AGENTS.md` for Claude Code.
+- `GEMINI.md` points Gemini CLI at `AGENTS.md`; teams can also configure Gemini's context file name to `AGENTS.md`.
+- `.github/copilot-instructions.md` points GitHub Copilot at the same rules.
+- Use `.codex/config.toml` for Codex settings such as sandbox, MCP servers, hooks, models, or approval defaults; keep repository conventions in `AGENTS.md`.
+- Add path-specific or workflow-specific agent files only when a rule is too narrow to load into every session.
+- Keep durable facts in files, not chat history: build commands, project identity, architecture, test commands, security rules, and review expectations.
+- Do not put secrets, credentials, private customer data, or environment-specific machine paths in committed agent instructions.
 
 ---
 
@@ -83,7 +131,7 @@ Strict. Non-negotiable for new code. Reviewers will flag violations.
 
 ## Project Structure
 
-The default Go project layout. Adopt it unless you have a strong reason not to.
+Default layout for projects adopting this blueprint:
 
 ```
 .
@@ -101,7 +149,10 @@ The default Go project layout. Adopt it unless you have a strong reason not to.
 ├── test/                    ← integration & load tests
 ├── migrations/              ← top-level SQL migrations (alt to internal/store/migrations)
 ├── .github/workflows/       ← CI pipelines
+├── .github/ISSUE_TEMPLATE/  ← issue templates
 ├── AGENTS.md                ← this file
+├── CONTRIBUTING.md          ← contribution workflow
+├── SECURITY.md              ← vulnerability reporting policy
 ├── Makefile                 ← development commands
 ├── go.mod
 ├── go.sum
@@ -114,19 +165,21 @@ The default Go project layout. Adopt it unless you have a strong reason not to.
 └── README.md
 ```
 
-**Layer rules (no exceptions):**
+Layer rules:
 
 - `cmd/` → `server/` → `service/` → `store/` → `models/`
 - Imports flow **downward only.** Never circular.
 - `service/` depends on `store/` **interfaces**, not concrete types. Mocks live in `service/storemock/`.
 - `models/` has no dependencies on other `internal/` packages.
-- `cmd/<binary>/main.go` is the **only** place that wires concrete implementations together.
+- `cmd/<binary>/main.go` wires concrete implementations together.
+- Shared code belongs under `internal/` unless it is intentionally importable by other modules.
+- Keep generated files clearly marked and document the generator command.
 
 ---
 
 ## Quality Gates
 
-All gates must pass before any code is merged. The full pipeline `make ci-check` runs `tidy → build → vet → lint → test → deadcode → vulncheck`. **This matches what CI runs.**
+All gates must pass before merge. `make ci-check` runs the local core pipeline: `tidy -> build -> vet -> lint-ci -> test-short -> deadcode -> vulncheck`. GitHub Actions runs the same core gates and then cross-compiles a linux/amd64 artifact.
 
 | Gate | Command | Required |
 |---|---|---|
@@ -135,22 +188,22 @@ All gates must pass before any code is merged. The full pipeline `make ci-check`
 | Vet | `go vet ./...` | clean |
 | Lint | `make lint` (golangci-lint, 14 linters) | clean |
 | Build | `make build` | success |
-| Test | `make test` (race + shuffle + count=1) | passes |
+| Test | `make test` (race + shuffle + count=1 + coverage) | passes |
 | Coverage | `make test-coverage` | meets layer targets (review-enforced) |
 | Deadcode | `make deadcode` | no unused funcs |
 | Vulns | `make vulncheck` | no known vulns |
-| CI | `make ci-check` | green (tidy + build + vet + lint + test + deadcode + vulncheck) |
+| CI | `make ci-check` | green |
 
 ---
 
-## 🚨 Test Mandate (Hard Requirement)
+## Test Mandate
 
-**Every code-writing task MUST produce `*_test.go` files alongside production code.** This is non-negotiable. The pre-commit hook and CI both enforce it.
+**Every code-writing task MUST produce `*_test.go` files alongside production code.** This is non-negotiable. Hooks and CI enforce the runnable checks; reviewers enforce package-level coverage expectations and the presence of meaningful tests.
 
 ### Requirements
 
 - Every **package modified** must have a `*_test.go` file committed in the same push.
-- **Table-driven tests with `t.Run()` for every new function** — no exceptions.
+- Table-driven tests with `t.Run()` for every new exported function and every meaningful branch in unexported logic.
 - `t.Helper()` in every test helper function.
 - Use `t.Context()` (Go 1.24+) or `context.WithCancel` for test contexts. Do **not** call `context.Background()` in business-logic tests.
 - Coverage targets by layer (enforced by review, not CI):
@@ -164,7 +217,7 @@ All gates must pass before any code is merged. The full pipeline `make ci-check`
 
 ### Rejection Process
 
-If `make test` fails **or** any modified package shows 0% coverage, the work is **rejected and must be fixed before merging.** There is no "we'll add tests later."
+If `make test` fails or any modified package shows 0% coverage, the work is rejected until fixed. There is no "we'll add tests later."
 
 ### Table-Driven Test Pattern
 
@@ -218,6 +271,9 @@ Strict. Reviewers will flag violations.
 - Document every exported symbol with a doc comment starting with the symbol name.
 - Use `slices.Contains` instead of hand-rolled loops.
 - Use `slices.SortFunc` with `cmp.Compare` instead of `sort.Slice`.
+- Keep handlers thin: parse/validate input, call service, translate response.
+- Keep business logic in `service/`, persistence details in `store/`, transport details in `server/`.
+- Prefer explicit validation at boundaries over relying on downstream failures.
 
 ### DO NOT
 
@@ -233,6 +289,17 @@ Strict. Reviewers will flag violations.
 - Mix acronym styles (`Http` vs `HTTP`) — pick one and be consistent.
 - Use `interface{}` — use `any`.
 - Add new top-level dependencies without justification in the PR description.
+- Log secrets, tokens, passwords, API keys, session cookies, or raw credentials.
+- Introduce network calls in unit tests; use integration tests under `test/` or build-tagged suites.
+
+### Security Defaults
+
+- Treat all external input as untrusted.
+- Validate request payloads, config files, environment variables, and CLI flags before use.
+- Set server timeouts for HTTP servers and clients.
+- Use least-privilege file permissions for generated credentials, sockets, and state files.
+- Prefer allowlists over denylists for commands, paths, enum values, and external integrations.
+- Keep secrets out of source, test fixtures, logs, traces, screenshots, and agent memory files.
 
 ---
 
@@ -246,6 +313,8 @@ Strict. Reviewers will flag violations.
 | `golangci-lint` | v2.x | `brew install golangci-lint` |
 | `pre-commit` | latest | `brew install pre-commit` |
 | `deadcode`, `govulncheck` | latest | `go install` from `tools.go` deps |
+
+CI pins tool installation versions in `.github/workflows/ci.yml`. When updating Go tool dependencies in `go.mod`, update the matching CI environment variables in the same change.
 
 ### Common Commands
 
@@ -261,11 +330,13 @@ make test-coverage    # test with coverage report
 make test-race        # test with race detector
 make lint             # golangci-lint run
 make lint-ci          # golangci-lint with --timeout=5m
-make ci-check         # tidy + build + vet + lint + test + deadcode + vulncheck (matches CI)
+make ci-check         # tidy + build + vet + lint-ci + test-short + deadcode + vulncheck
 make deadcode         # detect unused exported functions
 make vulncheck        # govulncheck
 make clean            # rm coverage.out, rm -rf bin/
 ```
+
+Use `make help` as the command index. If a Make target and this document disagree, fix the document or the target in the same change.
 
 ---
 
@@ -296,6 +367,12 @@ pre-commit install
 | `golangci-lint` | Runs the linter (golangci-lint, timeout 1m) |
 
 If any of these fail, the commit is **blocked**. Fix the issues and re-commit.
+
+Run all hooks manually with:
+
+```bash
+pre-commit run --all-files
+```
 
 ---
 
