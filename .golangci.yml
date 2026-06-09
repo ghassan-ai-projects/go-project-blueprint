@@ -8,6 +8,11 @@ version: "2"
 # ---------------------------------------------------------------------------
 
 linters:
+  # Don't use the standard default — only run the linters we explicitly
+  # enable. Keeps the surface area predictable for new contributors.
+  default: none
+
+  # Enable specific linter.
   enable:
     - errcheck       # unchecked errors
     - govet          # standard go vet
@@ -24,12 +29,24 @@ linters:
     - nakedret       # naked returns in long funcs
     - durationcheck  # time.Duration arithmetic bugs (e.g. multiplying two Durations)
 
-  disable:
-    - prealloc      # false positives, not worth the noise
-    - unconvert     # redundant with gofmt
-    - wastedassign  # covered by ineffassign
-    - paralleltest  # opinionated; team decides
-    - revive        # too noisy; staticcheck covers most
+  # Linter exclusions: skip these paths entirely (analyzed but not reported).
+  # v2 moved this from a top-level `exclusions:` block to `linters.exclusions`.
+  exclusions:
+    paths:
+      - (.*/)?mock(_.*)?\.go$
+      - (.*/)?mocks?/.*\.go$
+      - (.*/)?testdata/.*
+      - (.*/)?vendor/.*
+      - (.*/)?.*\.pb\.go$
+      - (.*/)?.*_gen\.go$
+      - (.*/)?.*_string\.go$
+
+# ---------------------------------------------------------------------------
+# Per-linter settings.
+# v2 accepts these under `linters.settings` (the v1 path is still the
+# canonical v2.12.2 path — `linters-settings` at the top level is a
+# newer/forward-compat alias and not yet active in this version).
+# ---------------------------------------------------------------------------
 
   settings:
     gosec:
@@ -40,8 +57,9 @@ linters:
         - G304
 
     wrapcheck:
-      # Allow these signatures to return unwrapped errors
-      ignoreSigs:
+      # Allow these signatures to return unwrapped errors.
+      # v2 renamed `ignoreSigs` -> `ignore-sigs` (kebab-case).
+      ignore-sigs:
         - fmt.Errorf
         - errors.New
         - "*.Error() string"
@@ -54,22 +72,12 @@ linters:
       locale: US
 
     thelper:
+      # v2 renamed bench/tb/fuzz flags into named sub-blocks (test, benchmark, tb).
+      # We only configure the test block; the rest use defaults.
       test:
-        first: false  # don't require t.Helper() in first funcs
-        bench: false
-        tb: false
-        fuzz: false
-
-    exclusions:
-      # Generated files, vendored code, testdata (Go regex)
-      paths:
-        - (.*/)?mock(_.*)?\.go$
-        - (.*/)?mocks?/.*\.go$
-        - (.*/)?testdata/.*
-        - (.*/)?vendor/.*
-        - (.*/)?.*\.pb\.go$
-        - (.*/)?.*_gen\.go$
-        - (.*/)?.*_string\.go$
+        first: false  # *testing.T doesn't have to be the first param
+        name: false   # param doesn't have to be named `t`
+        begin: false  # t.Helper() call not required at function start
 
 # ---------------------------------------------------------------------------
 # Run configuration
@@ -87,11 +95,20 @@ issues:
   max-same-issues: 10
   new-from-rev: HEAD~1  # only show new issues vs main
   fix: false           # never auto-fix in CI
+  # In v2 `uniq-by-line` lives under `issues`, not `output`.
+  uniq-by-line: true
+
+# ---------------------------------------------------------------------------
+# Output configuration
+# ---------------------------------------------------------------------------
+# v2 renamed `colored-line-number` -> `text` (with a `colors: true` flag).
+# Per-format `print-*` flags moved from the top `output` level into each
+# format block. The default is the colored text format.
 
 output:
   formats:
-    colored-line-number:
+    text:
       path: stdout
-  print-issued-lines: true
-  print-linter-name: true
-  uniq-by-line: true
+      print-linter-name: true
+      print-issued-lines: true
+      colors: true
