@@ -14,9 +14,9 @@ Thanks for improving this blueprint. The goal is simple: make Go repositories ea
 Use this loop for non-trivial changes:
 
 1. Think: clarify the goal, constraints, affected files, and risks.
-2. Plan: choose the smallest safe path and the checks that will validate it.
+2. Plan: choose the simplest correct path and the checks that will validate it.
 3. Review plan: get human review before broad, ambiguous, security-sensitive, destructive, architectural, or dependency-changing work.
-4. Write tests: add or update tests before implementation for production-code behavior changes.
+4. Write tests: for production-code behavior changes, write the proving test before implementation when feasible.
 5. Implement: keep the diff cohesive and reviewable.
 6. Validate: prove the change meets the Definition of Done.
 7. Handoff: summarize changes, checks, skipped checks, and remaining risk.
@@ -26,7 +26,9 @@ Use this loop for non-trivial changes:
 A change is done when:
 
 - The requested scope is complete and the diff avoids unrelated refactors.
+- The implementation is the simplest correct change that fits current requirements.
 - Production-code behavior changes include meaningful tests, and modified packages do not show 0% coverage.
+- When feasible, production-code behavior changes start with a failing or expectation-setting test.
 - `make ci-check` passes, unless the change is documentation-only and a narrower check is clearly sufficient.
 - `git diff --check` passes, and `pre-commit run --all-files` passes when `pre-commit` is installed.
 - Documentation is updated when behavior, commands, setup, or agent expectations change.
@@ -47,8 +49,10 @@ Every PR should include:
 
 - A short summary of what changed and why.
 - Tests or checks run.
+- Whether test-first was used for behavior changes, and if not, why not.
 - Any skipped checks and the reason.
 - Any new dependency, generated file, security implication, or migration step.
+- Any meaningful complexity added and why it was necessary.
 - Updates to [AGENTS.md](AGENTS.md) when the change affects future agent behavior.
 
 ## Commit Style
@@ -69,5 +73,6 @@ Agent-authored changes are welcome, but the handoff must be reviewable:
 
 - Keep diffs small enough for a human to audit.
 - Prefer existing patterns over new abstractions.
+- Default to the simplest correct implementation.
 - Do not commit secrets, machine-local paths, or private customer data.
 - Include command output summaries rather than pasting noisy logs.

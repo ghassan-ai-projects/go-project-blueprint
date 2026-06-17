@@ -12,14 +12,16 @@ This repository is a **template**, not an application. Fork it, replace the proj
 
 It includes:
 
-- `AGENTS.md` — the canonical instructions for agents and humans; Codex reads this natively.
-- `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md` — thin bridge files that point popular agents at the canonical instructions.
-- `CONTRIBUTING.md`, `SECURITY.md`, PR and issue templates — human governance for reviews, reports, and contribution flow.
-- `.golangci.yml` — strict Go linting with security and error-handling checks.
-- `.pre-commit-config.yaml` — local hooks for formatting, vetting, imports, linting, and file hygiene.
-- `.github/workflows/ci.yml`, `.github/dependabot.yml` — GitHub Actions pipeline and dependency update automation.
-- `Makefile` — reproducible local commands for daily development and CI parity.
-- `tools.go` — pinned tool dependencies for reproducible installs.
+- `AGENTS.md` - the canonical instructions for agents and humans; Codex reads this natively.
+- `.agents/context/` - small, task-targeted context files for project, architecture, testing, style, and review.
+- `.agents/prompts/` - reusable prompts for planning, implementation, review, feature work, and bugfixes.
+- `CLAUDE.md`, `GEMINI.md`, `.github/copilot-instructions.md` - thin bridge files that point popular agents at the canonical instructions.
+- `CONTRIBUTING.md`, `SECURITY.md`, PR and issue templates - human governance for reviews, reports, and contribution flow.
+- `.golangci.yml` - strict Go linting with security and error-handling checks.
+- `.pre-commit-config.yaml` - local hooks for formatting, vetting, imports, linting, and file hygiene.
+- `.github/workflows/ci.yml`, `.github/dependabot.yml` - GitHub Actions pipeline and dependency update automation.
+- `Makefile` - reproducible local commands for daily development and CI parity.
+- `tools.go` - pinned tool dependencies for reproducible installs.
 - `.editorconfig`, `.gitignore`, `LICENSE`.
 
 ## Why
@@ -29,6 +31,7 @@ Most repositories hand coding agents a wall of ambiguity: where do files go, whi
 This blueprint makes the contract explicit:
 
 - Agents read one canonical instruction file before editing.
+- Agents can then load only the smallest relevant `.agents/context/*.md` file instead of re-reading the full policy surface.
 - Humans get a short setup checklist and reproducible commands.
 - Hooks and CI enforce what prose alone cannot.
 - Tool-specific files stay tiny and delegate to `AGENTS.md`, avoiding drift. Codex needs no bridge file because `AGENTS.md` is its native project-guidance format.
@@ -53,8 +56,8 @@ cd your-project
 # 2. Update the module path
 go mod edit -module github.com/your-org/your-project
 
-# 3. Update AGENTS.md Project Identity and Makefile MODULE/BINARY
-$EDITOR AGENTS.md Makefile .pre-commit-config.yaml
+# 3. Update the template metadata and command defaults
+$EDITOR README.md AGENTS.md Makefile .pre-commit-config.yaml
 
 # 4. Install the pre-commit hook
 pre-commit install
@@ -72,11 +75,11 @@ func main() {}' > cmd/myapp/main.go
 make build
 ```
 
-For the full setup checklist, see [**`AGENTS.md` → For Humans Forking This Template**](AGENTS.md#for-humans-forking-this-template).
+Then update the remaining template placeholders called out in `AGENTS.md`, `go.mod`, `Makefile`, and `.pre-commit-config.yaml`.
 
 ### For Coding Agents
 
-Read [AGENTS.md](AGENTS.md) before editing. It contains the project identity, architecture boundaries, test mandate, quality gates, and handoff expectations.
+Read [AGENTS.md](AGENTS.md) before editing. It contains the entrypoint rules and points to the smaller context files under `.agents/context/` for architecture, testing, style, and review.
 
 ## Quality
 
@@ -92,4 +95,4 @@ CI runs the same core quality gates and also publishes a short-lived linux/amd64
 
 ## License
 
-MIT — see [LICENSE](LICENSE).
+MIT - see [LICENSE](LICENSE).
