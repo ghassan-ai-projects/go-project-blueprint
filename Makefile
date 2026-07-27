@@ -17,6 +17,12 @@ LDFLAGS   := -ldflags="-X main.Version=$(VERSION) -X main.Commit=$(COMMIT)"
 PKGS := $(shell go list ./... 2>/dev/null)
 HAS_PKGS := $(if $(PKGS),yes,no)
 
+# Detect main packages separately. doc.go keeps one non-main package at the
+# module root, so HAS_PKGS is yes even in a fresh template -- but deadcode
+# needs a main package as its entry point and errors out without one.
+MAIN_PKGS := $(shell go list -f '{{if eq .Name "main"}}{{.ImportPath}}{{end}}' ./... 2>/dev/null)
+HAS_MAIN := $(if $(MAIN_PKGS),yes,no)
+
 # Default target
 .DEFAULT_GOAL := help
 
@@ -124,10 +130,12 @@ ci-check: tidy build vet lint-ci test-short deadcode vulncheck ## Run the full C
 
 # ---- Tools ----------------------------------------------------------------
 deadcode: ## Detect unused exported functions
-	@if command -v deadcode >/dev/null 2>&1 && [ "$(HAS_PKGS)" = "yes" ]; then \
-	  deadcode -test ./...; \
+	@if ! command -v deadcode >/dev/null 2>&1; then \
+	  echo "(deadcode not installed -- run: go install golang.org/x/tools/cmd/deadcode@latest)"; \
+	elif [ "$(HAS_MAIN)" != "yes" ]; then \
+	  echo "(no main package yet -- skipping deadcode)"; \
 	else \
-	  echo "(deadcode not available or no packages -- skipping)"; \
+	  deadcode -test ./...; \
 	fi
 
 vulncheck: ## Run govulncheck

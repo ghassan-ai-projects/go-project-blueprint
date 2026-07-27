@@ -17,7 +17,7 @@ on:
     branches: [main]
 
 env:
-  GO_VERSION: "1.25.0"
+  GO_VERSION: "1.25.12"
   GO_TOOLS_VERSION: "v0.45.0"
   GOVULNCHECK_VERSION: "v1.3.0"
   GOLANGCI_LINT_VERSION: "v2.12.2"
@@ -36,10 +36,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: "${{ env.GO_VERSION }}"
           cache: true
@@ -57,8 +57,12 @@ jobs:
       - name: Cross-compile linux/amd64
         run: make cross-compile
 
+      # Skipped in a freshly-cloned template, where cross-compile produces
+      # nothing because there is no cmd/ yet. Without the guard this step
+      # warns on every run. Once cmd/<name>/main.go exists it runs normally.
       - name: Upload linux/amd64 artifact
-        uses: actions/upload-artifact@v4
+        if: hashFiles('bin/*-linux-amd64') != ''
+        uses: actions/upload-artifact@v7
         with:
           name: binary-linux-amd64
           path: bin/*-linux-amd64
