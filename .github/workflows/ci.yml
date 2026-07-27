@@ -36,10 +36,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Set up Go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@v7
         with:
           go-version: "${{ env.GO_VERSION }}"
           cache: true
@@ -58,7 +58,7 @@ jobs:
         run: make cross-compile
 
       - name: Upload linux/amd64 artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: binary-linux-amd64
           path: bin/*-linux-amd64
