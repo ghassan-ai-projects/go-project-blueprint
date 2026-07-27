@@ -57,7 +57,11 @@ jobs:
       - name: Cross-compile linux/amd64
         run: make cross-compile
 
+      # Skipped in a freshly-cloned template, where cross-compile produces
+      # nothing because there is no cmd/ yet. Without the guard this step
+      # warns on every run. Once cmd/<name>/main.go exists it runs normally.
       - name: Upload linux/amd64 artifact
+        if: hashFiles('bin/*-linux-amd64') != ''
         uses: actions/upload-artifact@v7
         with:
           name: binary-linux-amd64
